@@ -1,22 +1,111 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CS Chư Sê - Data flow cao su</title>
+  <meta name="description" content="Data flow cao su CS Chư Sê" />
+  <style>
+    * { box-sizing: border-box; }
+    :root { font-family: Inter, Arial, sans-serif; color: #073f3a; background: #f3faf8; }
+    body { margin: 0; background: #f3faf8; }
+    button { font: inherit; }
+    .topbar { position: sticky; top: 0; z-index: 5; min-height: 84px; padding: 16px 28px; background: linear-gradient(90deg, #176d4b, #31aa9d); color: #fff; display: flex; justify-content: space-between; align-items: center; gap: 22px; box-shadow: 0 8px 22px rgba(7, 64, 55, .16); }
+    .topbar p { margin: 0 0 4px; font-weight: 800; opacity: .86; }
+    .topbar h1 { margin: 0; font-size: 28px; line-height: 1; }
+    nav { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 9px; }
+    nav button { border: 1px solid rgba(255,255,255,.3); background: rgba(255,255,255,.16); color: #fff; border-radius: 8px; padding: 9px 14px; font-weight: 850; cursor: pointer; }
+    nav button.active { background: #fff; color: #0a7f73; }
+    main { padding: 28px; }
+    .page { display: none; }
+    .page.active { display: block; }
+    .section-title { border-left: 6px solid var(--tone); background: #fff; padding: 18px 22px; margin-bottom: 22px; box-shadow: 0 8px 20px rgba(8, 72, 65, .08); }
+    .section-title h2 { margin: 0 0 6px; font-size: 26px; color: var(--tone); }
+    .section-title p { margin: 0; font-weight: 750; color: #42736d; }
+    .overview-band { min-height: 620px; border: 1px solid #d7ebe7; background: #fff; display: grid; grid-template-columns: 290px 1fr 300px; gap: 36px; align-items: center; padding: 34px; overflow: hidden; }
+    .overview-source, .overview-output { display: flex; flex-direction: column; gap: 14px; }
+    .overview-source h2, .overview-output h2 { margin: 0 0 8px; color: #008a7f; }
+    .overview-source button, .overview-output button { text-align: left; min-height: 70px; border: 2px solid #009b90; background: #e8fbf7; color: #00756d; border-radius: 10px; padding: 14px 16px; font-weight: 900; cursor: pointer; }
+    .overview-core { min-height: 420px; display: grid; justify-items: center; align-content: center; gap: 22px; }
+    .overview-core div { width: min(330px, 92%); min-height: 74px; display: grid; place-items: center; border-radius: 14px; background: #0f988c; color: #fff; font-size: 24px; font-weight: 950; box-shadow: 0 16px 34px rgba(18, 151, 137, .24); }
+    .overview-core span { color: #0f988c; font-weight: 950; font-size: 22px; }
+    .flow-grid { min-height: 600px; background: #fff; border: 1px solid #dbeeea; padding: 28px; display: grid; grid-template-columns: minmax(430px, 1.2fr) 170px 52px minmax(170px, .8fr) 52px minmax(170px, .8fr) 52px minmax(190px, .9fr); gap: 14px; align-items: center; overflow-x: auto; }
+    .merge-flow { display: grid; grid-template-columns: minmax(230px, 1fr) 138px 170px; gap: 0; align-items: center; }
+    .input-stack { display: grid; gap: 28px; }
+    .input-card { min-height: 150px; border: 2px solid var(--tone); border-radius: 12px; background: #eafbf7; padding: 16px 18px 42px; position: relative; }
+    .input-card h3 { margin: 0 0 10px; color: #008a7f; font-size: 16px; }
+    .input-card ul { margin: 0; padding-left: 18px; line-height: 1.45; color: #17433f; }
+    .input-card span { position: absolute; left: 16px; bottom: 10px; border: 1px solid #009b90; border-radius: 999px; padding: 3px 10px; background: #fff; color: #008a7f; font-size: 12px; font-weight: 900; }
+    .merge-lane { height: 340px; }
+    .merge-lane svg { width: 100%; height: 100%; overflow: visible; }
+    .merge-lane path { fill: none; stroke: var(--tone); stroke-width: 2.4; stroke-dasharray: 8 8; marker-end: url(#arrow); }
+    .sheet-card { min-height: 86px; border: 2px solid var(--tone); border-radius: 10px; background: #c8fbef; padding: 18px 16px; display: grid; align-content: center; gap: 6px; }
+    .sheet-card strong { color: #008a7f; }
+    .sheet-card small { color: #315853; font-weight: 750; }
+    .bigquery { width: 150px; height: 150px; border-radius: 50%; background: var(--tone); color: #fff; display: grid; place-items: center; text-align: center; padding: 26px; box-shadow: 0 16px 38px color-mix(in srgb, var(--tone) 45%, transparent); }
+    .bigquery strong { font-size: 16px; }
+    .bigquery span { font-size: 11px; font-weight: 750; }
+    .arrow-band { font-size: 34px; font-weight: 950; color: var(--tone); text-align: center; }
+    .data-list { min-height: 210px; border: 1px solid #d4e9e4; border-radius: 10px; background: #fbfffe; padding: 16px; }
+    .data-list h3 { margin: 0 0 12px; font-size: 16px; color: var(--tone); }
+    .data-list p { margin: 0 0 8px; padding: 9px 10px; border-radius: 7px; background: #f1f8f6; color: #315651; font-weight: 800; }
+    .bt5-flow { min-height: 520px; border: 1px solid #eed7d7; background: #fff; padding: 42px; display: flex; align-items: center; justify-content: center; gap: 18px; overflow-x: auto; }
+    .bt5-step-wrap { display: flex; align-items: center; gap: 18px; }
+    .bt5-step-wrap b { color: #e23737; font-size: 34px; }
+    .bt5-step { width: 230px; min-height: 138px; border: 2px solid #e23737; border-radius: 12px; background: #fff6f6; padding: 20px; display: grid; align-content: center; gap: 10px; }
+    .bt5-step strong { color: #d12b2b; font-size: 18px; }
+    .bt5-step span { color: #6f3c3c; font-weight: 750; line-height: 1.45; }
+    @media (max-width: 980px) { .topbar { align-items: flex-start; flex-direction: column; } .overview-band, .flow-grid { grid-template-columns: 1fr; min-height: auto; } .merge-flow { grid-template-columns: 1fr; gap: 18px; } .merge-lane { display: none; } .bigquery { margin: 0 auto; } .arrow-band { transform: rotate(90deg); } .bt5-flow { justify-content: flex-start; } }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div><p>CS Chư Sê</p><h1>Data flow cao su</h1></div>
+    <nav id="tabs"></nav>
+  </header>
+  <div id="app"></div>
 
-  <!DOCTYPE html>
-  <html lang="en">
-    <head>
-      
-      <meta charset="UTF-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>CS Chư Sê</title>
-      <meta name="description" content="Visualize and design data flow diagrams tailored for rubber industry processes, enabling clear communication and efficient data management for Chư Sê stakeholders." />
-      <meta name="robots" content="noindex, nofollow" />
-      <style>html, body { height: 100%; margin: 0; } #root { height: 100%; }</style>
-      
-    </head>
+  <script>
+    const tasks = [
+      { id: 1, title: "BT1 - Lương và sản lượng khai thác", subtitle: "Lương chi tiết Input → BigQuery → Data Mart → Kết quả đầu ra", tone: "#009b90", shared: "Googlesheet", sharedHint: "ETL → BigQuery", inputs: [{ title: "3 Appsheet nhập sản lượng mủ", cadence: "Hằng ngày", items: ["QR code nhận diện công nhân", "Ngày, MSNV, mủ nước/tạp/dây/phụ", "Nơi nhận, lái xe, mã chuyến"] }, { title: "Tính lương CN khai thác", cadence: "Tuần + Tháng", items: ["GoogleSheet: kế hoạch sản lượng năm", "Appsheet: chấm điểm CL A-B-C-D", "KTKL mủ NL: cân tại nông trường", "Thực tế cân tại nhà máy", "Chênh lệch hao hụt"] }], facts: ["fact_ke_hoach_sl", "fact_gn_san_luong", "fact_xac_nhan_drc", "fact_luong_cn"], marts: ["DM sản lượng ngày", "DM chất lượng mủ", "DM lương công nhân"], outputs: ["Bảng lương công nhân", "Theo dõi sản lượng", "Đối soát hao hụt"] },
+      { id: 2, title: "BT2 - Vườn cây, khai thác và nông vụ", subtitle: "Nhật ký vườn cây → BigQuery → Data Mart → Dashboard vận hành", tone: "#0b73a8", shared: "Googlesheet", sharedHint: "Chuẩn hóa → BigQuery", inputs: [{ title: "Appsheet nhật ký nông trường", cadence: "Hằng ngày", items: ["Lô, đội, tổ, công nhân", "Công việc khai thác/nông vụ", "Sản lượng và tình trạng vườn cây"] }, { title: "Bảng kế hoạch chăm sóc", cadence: "Tuần + Tháng", items: ["Lịch cạo, lịch bón phân", "Định mức vật tư", "Kế hoạch sản lượng theo lô"] }], facts: ["fact_nhat_ky_vuon", "fact_cham_soc", "fact_ke_hoach_lo", "fact_vat_tu"], marts: ["DM tiến độ nông vụ", "DM năng suất lô", "DM cảnh báo vườn cây"], outputs: ["Báo cáo nông vụ", "Dashboard năng suất", "Cảnh báo chậm tiến độ"] },
+      { id: 3, title: "BT3 - Kho, nhập xuất và tồn mủ", subtitle: "Phiếu kho → BigQuery → Data Mart → Báo cáo tồn kho", tone: "#d98216", shared: "Googlesheet", sharedHint: "ETL kho → BigQuery", inputs: [{ title: "Appsheet nhập/xuất kho", cadence: "Theo phát sinh", items: ["Phiếu nhập, phiếu xuất", "Loại mủ, khối lượng, độ DRC", "Kho, xe, tài xế, chuyến"] }, { title: "Bảng quy đổi và kiểm kê", cadence: "Ngày + Tháng", items: ["Quy đổi mủ nước về khô", "Biên bản kiểm kê", "Chênh lệch thực tế và sổ sách"] }], facts: ["fact_nhap_kho", "fact_xuat_kho", "fact_ton_kho", "dim_kho"], marts: ["DM tồn kho", "DM nhập xuất", "DM kiểm kê"], outputs: ["Báo cáo tồn kho", "Theo dõi nhập xuất", "Cảnh báo lệch kho"] },
+      { id: 4, title: "BT4 - PowerBI + Excel điều hành", subtitle: "Fact tables → Data mart → PowerBI/Excel cho vận hành", tone: "#7657c8", shared: "Googlesheet", sharedHint: "Mapping → BigQuery", inputs: [{ title: "Nguồn dữ liệu tổng hợp", cadence: "Tự động", items: ["Sản lượng, lương, kho", "Kế hoạch và thực hiện", "Chất lượng và hao hụt"] }, { title: "Bảng tham số báo cáo", cadence: "Theo kỳ", items: ["Kỳ báo cáo", "Cấu trúc nông trường/đội/tổ", "Bộ chỉ tiêu quản trị"] }], facts: ["fact_san_luong", "fact_luong", "fact_ton_kho", "dim_thoi_gian"], marts: ["DM vận hành ngày", "DM tổng hợp tháng", "DM chỉ tiêu KPI"], outputs: ["PowerBI dashboard", "Excel điều hành", "Bộ KPI quản trị"] }
+    ];
+    const bt5 = ["BigQuery", "Query dữ liệu", "Data mart", "Báo cáo theo mẫu Tập đoàn"];
+    let active = 0;
 
-    <body>
-      
-      <div id="root"></div>
-      <script type="module" src="/src/main.tsx"></script>
-      
-    </body>
-  </html>
-  
+    function el(tag, attrs = {}, html = "") {
+      const node = document.createElement(tag);
+      Object.entries(attrs).forEach(([k, v]) => node.setAttribute(k, v));
+      node.innerHTML = html;
+      return node;
+    }
+    function safe(items) { return items.map(x => `<p>${x}</p>`).join(""); }
+    function list(items) { return items.map(x => `<li>${x}</li>`).join(""); }
+    function renderTabs() {
+      const tabs = document.getElementById("tabs");
+      tabs.innerHTML = `<button class="${active === 0 ? "active" : ""}" onclick="show(0)">Tổng quan</button>` + tasks.map(t => `<button class="${active === t.id ? "active" : ""}" onclick="show(${t.id})">BT${t.id}</button>`).join("") + `<button class="${active === 5 ? "active" : ""}" onclick="show(5)">BT5</button>`;
+    }
+    function overview() {
+      return `<main><section class="overview-band"><div class="overview-source"><h2>Nguồn nhập liệu</h2>${tasks.map(t => `<button onclick="show(${t.id})">${t.inputs[0].title}</button>`).join("")}</div><div class="overview-core"><div>Googlesheet</div><span>ETL</span><div>BigQuery</div><span>Data mart</span></div><div class="overview-output"><h2>Đầu ra</h2><button>Sản lượng</button><button>Lương công nhân</button><button>Tồn kho</button><button>Báo cáo biểu mẫu Tập đoàn</button></div></section></main>`;
+    }
+    function mergeFlow(t) {
+      return `<div class="merge-flow"><div class="input-stack">${t.inputs.map(i => `<article class="input-card"><h3>${i.title}</h3><ul>${list(i.items)}</ul><span>${i.cadence}</span></article>`).join("")}</div><div class="merge-lane" aria-hidden="true"><svg viewBox="0 0 180 340" preserveAspectRatio="none"><defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="currentColor"></path></marker></defs><path d="M2 72 H58 Q76 72 76 92 V170"></path><path d="M2 268 H58 Q76 268 76 248 V170"></path><path d="M76 170 H176"></path></svg></div><article class="sheet-card"><strong>${t.shared}</strong><small>${t.sharedHint}</small></article></div>`;
+    }
+    function taskPage(t) {
+      return `<main style="--tone:${t.tone}"><div class="section-title"><h2>${t.title}</h2><p>${t.subtitle}</p></div><section class="flow-grid">${mergeFlow(t)}<div class="bigquery"><strong>BIG QUERY</strong><span>Data Lake → ETL → Data Warehouse</span></div><div class="arrow-band">→</div><section class="data-list"><h3>FACT / DIM Tables</h3>${safe(t.facts)}</section><div class="arrow-band">→</div><section class="data-list"><h3>Data mart</h3>${safe(t.marts)}</section><div class="arrow-band">→</div><section class="data-list"><h3>Kết quả đầu ra</h3>${safe(t.outputs)}</section></section></main>`;
+    }
+    function bt5Page() {
+      return `<main style="--tone:#e23737"><div class="section-title"><h2>BT5 - Báo cáo biểu mẫu Tập đoàn</h2><p>BigQuery → Query dữ liệu → Data mart → Báo cáo theo mẫu Tập đoàn</p></div><section class="bt5-flow">${bt5.map((x, i) => `<div class="bt5-step-wrap"><article class="bt5-step"><strong>${x}</strong><span>${i === 0 ? "Nguồn dữ liệu đã chuẩn hóa" : i === 1 ? "Lọc, gom nhóm, tính chỉ tiêu" : i === 2 ? "Bảng phục vụ mẫu báo cáo" : "Xuất đúng cấu trúc biểu mẫu"}</span></article>${i < bt5.length - 1 ? "<b>→</b>" : ""}</div>`).join("")}</section></main>`;
+    }
+    function show(id) {
+      active = id;
+      renderTabs();
+      document.getElementById("app").innerHTML = id === 0 ? overview() : id === 5 ? bt5Page() : taskPage(tasks.find(t => t.id === id));
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+    show(0);
+  </script>
+</body>
+</html>
